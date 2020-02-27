@@ -47,9 +47,9 @@ if __name__ == '__main__':
                 all_token_type_ids.append(token_type_ids)
                 
             # Pad and save tensors
-            qcp_ids = pad_sequence(all_qcp_ids, batch_first=True)
-            attention_mask = pad_sequence(all_attention_mask, batch_first=True)
-            token_type_ids = pad_sequence(all_token_type_ids, batch_first=True)
+            qcp_ids = pad_sequence(all_qcp_ids)
+            attention_mask = pad_sequence(all_attention_mask)
+            token_type_ids = pad_sequence(all_token_type_ids)
             torch.save(qcp_ids, 'data/%s/qcp/%s|%s.pt' % (split, dataset, i))
             torch.save(attention_mask, 'data/%s/amask/%s|%s.pt' % (split, dataset, i))
             torch.save(token_type_ids, 'data/%s/ttype/%s|%s.pt' % (split, dataset, i))
