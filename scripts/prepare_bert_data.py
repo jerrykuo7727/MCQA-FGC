@@ -25,13 +25,22 @@ if __name__ == '__main__':
             answer = torch.LongTensor([PQCA['answer']]).squeeze(0)
             torch.save(answer, 'data/%s/answer/%s|%s.pt' % (split, dataset, i))
             
-            # Save QCP id tensor
+            # Individually process QCP input
             all_qcp_ids = []
             for ci, key in enumerate(['c1', 'c2', 'c3', 'c4'], start=1):
                 c_tokens = tokenizer.tokenize(PQCA[key]) + [tokenizer.sep_token]
-                qcp_tokens = [tokenizer.cls_token] + q_tokens + c_tokens + p_tokens
+                qc_tokens = q_tokens + c_tokens
+                qcp_tokens = [tokenizer.cls_token] + qc_tokens + p_tokens
+                
+                # Convert input to tensors
                 qcp_ids = torch.LongTensor(tokenizer.convert_tokens_to_ids(qcp_tokens))
-                torch.save(qcp_ids, 'data/%s/qcp%d/%s|%s.pt' % (split, ci, dataset, i))
+                attention_mask = torch.FloatTensor([1 for token in qcp_tokens])
+                token_type_ids = torch.LongTensor([0, *(0 for _ in qc_tokens), *(1 for _ in p_tokens)])
+                
+                # Save tensors
+                torch.save(qcp_ids, 'data/%s/qcp_%d/%s|%s.pt' % (split, ci, dataset, i))
+                torch.save(attention_mask, 'data/%s/amask_%d/%s|%s.pt' % (split, ci, dataset, i))
+                torch.save(token_type_ids, 'data/%s/ttype_%d/%s|%s.pt' % (split, ci, dataset, i))
 
             print('%s: %d/%d (%.2f%%) \r' % (dataset, i+1, n_data, 100*(i+1)/n_data), end='')
     print()
