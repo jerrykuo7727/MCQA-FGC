@@ -1,9 +1,9 @@
 #!/bin/bash
 
-python3_cmd=python3.6
+python3_cmd=python3
 
-stage=2
-use_gpu=cuda:2
+stage=0
+use_gpu=cuda:0
 
 model=bert
 model_path=/home/M10815022/Models/bert-base-chinese
@@ -55,7 +55,7 @@ if [ $stage -le 2 ]; then
   echo "     Train and test QA model     "
   echo "================================="
   if [ -d $save_path ]; then
-    echo "'$save_path' already exists! Please remove it and try again." #; exit 1
+    echo "'$save_path' already exists! Please remove it and try again."; exit 1
   fi
   mkdir -p $save_path
   $python3_cmd scripts/train_${model}.py $use_gpu $model_path $save_path

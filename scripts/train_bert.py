@@ -1,7 +1,9 @@
 import sys
 import numpy as np
+from time import time
 from os.path import join
 from copy import deepcopy
+from datetime import timedelta
 
 import torch
 from torch.optim import AdamW
@@ -12,7 +14,7 @@ from data import get_dataloader
 np.random.seed(42)
 torch.manual_seed(42)
 
-norm_tokenizer = BertTokenizer.from_pretrained('/home/M10815022/Models/bert-wwm-ext')
+global start_time
 
 
 def validate_dataset(model, split, tokenizer, maxlen=512, prefix=None):
@@ -45,15 +47,15 @@ def validate(model, tokenizer, maxlen=512, prefix=None):
 
     # Valid set
     val_loss, val_acc = validate_dataset(model, 'dev', tokenizer, maxlen, prefix)
-    print('val_loss=%.5f, val_acc=%.2f%%' % (val_loss, 100*val_acc))
+    print('  val_loss=%.5f, val_acc=%.2f%%' % (val_loss, 100*val_acc))
 
     # Test set
     test_loss, test_acc = validate_dataset(model, 'test', tokenizer, maxlen, prefix)
-    print('test_loss=%.5f, test_acc=%.2f%%' % (test_loss, 100*test_acc))
+    print('  test_loss=%.5f, test_acc=%.2f%%' % (test_loss, 100*test_acc))
     
     # Test-hard set
     test_hard_loss, test_hard_acc = validate_dataset(model, 'test_hard', tokenizer, maxlen, prefix)
-    print('test_hard_loss=%.5f, test_hard_acc=%.2f%%' % (test_hard_loss, 100*test_hard_acc))
+    print('  test_hard_loss=%.5f, test_hard_acc=%.2f%%' % (test_hard_loss, 100*test_hard_acc))
 
     return val_loss
 
@@ -63,7 +65,6 @@ if __name__ == '__main__':
     if len(sys.argv) != 4:
         print('Usage: python3 train_bert.py cuda:<n> <model_path> <save_path>')
         exit(1)
-
 
     # Config
     lr = 3e-5
@@ -94,7 +95,10 @@ if __name__ == '__main__':
     print('%d steps per epoch.' % n_step_per_epoch)
     print('%d steps per validation.' % n_step_per_validation)
 
+    
     print('Start training...')
+    
+    start_time = time()
     while True:
         for batch in dataloader:
             batch = [tensor.cuda(device=device) for tensor in batch]
@@ -106,13 +110,15 @@ if __name__ == '__main__':
             
             loss.backward()
             step += 1
-            print('step %d | loss=%.5f\r' % (step, loss), end='')
+            elapsed_time = str(timedelta(seconds=int(time()-start_time)))
+            print('step %d | loss=%.5f | %s\r' % (step, loss, elapsed_time), end='')
+            
             if step % update_stepsize == 0:
                 optimizer.step()
                 optimizer.zero_grad()
             
-            if step == 50 or step % n_step_per_validation == 0:
-                print("step %d | Validating..." % step)
+            if step % n_step_per_validation == 0:
+                print("\nstep %d | Validating..." % (step))
                 val_metric = validate(model, tokenizer, maxlen)
                 if val_metric > best_val:
                     patience = 0
@@ -121,7 +127,7 @@ if __name__ == '__main__':
                 else:
                     patience += 1
 
-            if patience >= 10 or step >= 200000:
+            if patience >= 5 or step >= 200000:
                 print('Finish training. Scoring best results...')
                 save_path = join(sys.argv[3], 'finetune.ckpt')
                 torch.save(best_state_dict, save_path)
