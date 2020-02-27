@@ -31,10 +31,11 @@ def validate_dataset(model, split, tokenizer, maxlen=512, prefix=None):
             loss, logits = model(input_ids, attention_mask=attention_mask, \
                                  token_type_ids=token_type_ids, labels=answers)
         
-        total_loss += loss * len(batch)
+        batch_size = len(answers)
+        total_loss += loss * batch_size
         preds = logits.argmax(-1)
         correct += (preds == answers).sum().item()
-        count += len(batch)    
+        count += batch_size
     
     del dataloader
     loss = total_loss / count
@@ -97,7 +98,6 @@ if __name__ == '__main__':
 
     
     print('Start training...')
-    
     start_time = time()
     while True:
         for batch in dataloader:
@@ -127,7 +127,7 @@ if __name__ == '__main__':
                 else:
                     patience += 1
 
-            if patience >= 5 or step >= 200000:
+            if patience >= 10 or step >= 200000:
                 print('Finish training. Scoring best results...')
                 save_path = join(sys.argv[3], 'finetune.ckpt')
                 torch.save(best_state_dict, save_path)
