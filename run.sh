@@ -2,8 +2,8 @@
 
 python3_cmd=python3.6
 
-stage=1
-use_gpu=cuda:0
+stage=2
+use_gpu=cuda:2
 
 model=bert
 model_path=/home/M10815022/Models/bert-base-chinese
@@ -35,9 +35,7 @@ if [ $stage -le 1 ]; then
 
   rm -rf data
   for split in train dev test test_hard; do
-    for dir in answer qcp_1 qcp_2 qcp_3 qcp_4 \
-               amask_1 amask_2 amask_3 amask_4 \
-               ttype_1 ttype_2 ttype_3 ttype_4; do
+    for dir in answer qcp amask ttype; do
       mkdir -p data/$split/$dir
     done
   done
@@ -51,18 +49,14 @@ if [ $stage -le 1 ]; then
   $python3_cmd scripts/prepare_${model}_data.py $model_path train $train_datasets || exit 1
 fi
 
-exit 0
-
 
 if [ $stage -le 2 ]; then
   echo "================================="
   echo "     Train and test QA model     "
   echo "================================="
-  #if [ -d $save_path ]; then
-  #  echo "'$save_path' already exists! Please remove it and try again."; exit 1
-  #fi
-  #mkdir -p $save_path
-  #$python3_cmd scripts/train_${model}.py $use_gpu $model_path $save_path
-  #$python3_cmd scripts/finetune_${model}.py $use_gpu $model_path $save_path
-  $python3_cmd scripts/validate_${model}.py $use_gpu $model_path $save_path
+  if [ -d $save_path ]; then
+    echo "'$save_path' already exists! Please remove it and try again." #; exit 1
+  fi
+  mkdir -p $save_path
+  $python3_cmd scripts/train_${model}.py $use_gpu $model_path $save_path
 fi
