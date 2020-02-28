@@ -87,12 +87,12 @@ if __name__ == '__main__':
     optimizer.zero_grad()
 
     step = 0
-    patience, best_val = 0, 0
+    patience, best_val = 0, 10000
     best_state_dict = model.state_dict()
     dataloader = get_dataloader('train', tokenizer, maxlen, batch_size, num_workers=16)
     
     n_step_per_epoch = len(dataloader)
-    n_step_per_validation = n_step_per_epoch // 5
+    n_step_per_validation = n_step_per_epoch // 2
     print('%d steps per epoch.' % n_step_per_epoch)
     print('%d steps per validation.' % n_step_per_validation)
 
@@ -120,14 +120,14 @@ if __name__ == '__main__':
             if step % n_step_per_validation == 0:
                 print("\nstep %d | Validating..." % (step))
                 val_metric = validate(model, tokenizer, maxlen)
-                if val_metric > best_val:
+                if val_metric < best_val:
                     patience = 0
                     best_val = val_metric
                     best_state_dict = deepcopy(model.state_dict())
                 else:
                     patience += 1
 
-            if patience >= 10 or step >= 200000:
+            if patience >= 5 or step >= 200000:
                 print('Finish training. Scoring best results...')
                 save_path = join(sys.argv[3], 'finetune.ckpt')
                 torch.save(best_state_dict, save_path)
